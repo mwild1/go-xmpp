@@ -3,6 +3,7 @@ package xmpp
 import (
 	"context"
 	"errors"
+	"log"
 	"sync"
 	"time"
 
@@ -82,16 +83,19 @@ func (sm *StreamManager) Run() error {
 			sm.Metrics.setLoginTime()
 		case StateDisconnected:
 			// Reconnect on disconnection
+			log.Print("SM: Disconnected, reconnecting...")
 			return sm.resume()
 		case StateStreamError:
 			sm.client.Disconnect()
 			// Only try reconnecting if we have not been kicked by another session to avoid connection loop.
 			// TODO: Make this conflict exception a permanent error
 			if e.StreamError != "conflict" {
+				log.Print("SM: Disconnected due to stream error, reconnecting...")
 				return sm.resume()
 			}
 		case StatePermanentError:
 			// Do not attempt to reconnect
+			log.Print("SM: Disconnected due to permanent error, will not reconnect.")
 		}
 		return nil
 	}
@@ -100,6 +104,7 @@ func (sm *StreamManager) Run() error {
 	sm.wg.Add(1)
 	if err := sm.connect(); err != nil {
 		sm.wg.Done()
+		log.Print("SM: Run::connect() failed")
 		return err
 	}
 	sm.wg.Wait()
@@ -130,6 +135,7 @@ func (sm *StreamManager) connect() error {
 			}
 		}
 	}
+	log.Print("SM: Connect() was called, but client is not disconnected")
 	return nil
 }
 
@@ -138,6 +144,7 @@ func (sm *StreamManager) resume() error {
 	var backoff backoff // TODO: Group backoff calculation features with connection manager?
 
 	if sm.reconnecting == true {
+		log.Print("SM: Already reconnecting, not trying again right now")
 		return nil
 	}
 
@@ -161,6 +168,8 @@ func (sm *StreamManager) resume() error {
 	}
 
 	sm.reconnecting = false
+
+	log.Print("SM: Connected!")
 
 	if sm.PostConnect != nil {
 		sm.PostConnect(sm.client)

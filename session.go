@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"log"
 	"gosrc.io/xmpp/stanza"
 	"strconv"
 )
@@ -52,6 +53,7 @@ func NewSession(c *Client, state SMState) (*Session, error) {
 	}
 
 	if s.TlsEnabled {
+		log.Print("SESS: Post-TLS reset...")
 		s.reset()
 	}
 
@@ -60,6 +62,7 @@ func NewSession(c *Client, state SMState) (*Session, error) {
 	if s.err != nil {
 		return s, s.err
 	}
+	log.Printf("SESS: Post-auth reset...")
 	s.reset()
 	if s.err != nil {
 		return s, s.err
@@ -166,6 +169,8 @@ func (s *Session) resume(o *Config) bool {
 	if s.SMState.Id == "" {
 		return false
 	}
+
+	log.Print("SESS: Resuming...")
 
 	rsm := stanza.SMResume{
 		PrevId: s.SMState.Id,

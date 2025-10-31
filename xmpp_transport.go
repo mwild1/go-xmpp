@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"log"
 	"io"
 	"net"
 	"time"
@@ -35,13 +36,18 @@ var clientStreamOpen = fmt.Sprintf("<?xml version='1.0'?><stream:stream to='%%s'
 func (t *XMPPTransport) Connect() (string, error) {
 	var err error
 
+	log.Print("T: Connecting...")
+
 	// Since we're starting a new connection, reset the encryption status
 	t.isSecure = false
 
 	t.conn, err = net.DialTimeout("tcp", t.Config.Address, time.Duration(t.Config.ConnectTimeout)*time.Second)
 	if err != nil {
+		log.Print("T: Connection failed")
 		return "", NewConnError(err, true)
 	}
+
+	log.Print("T: Connected... starting stream")
 
 	t.closeChan = make(chan stanza.StreamClosePacket, 1)
 	t.readWriter = newStreamLogger(t.conn, t.logFile)
@@ -51,6 +57,7 @@ func (t *XMPPTransport) Connect() (string, error) {
 }
 
 func (t *XMPPTransport) StartStream() (string, error) {
+	log.Print("T: Sending preamble...")
 	if _, err := fmt.Fprintf(t, t.openStatement, t.Config.Domain); err != nil {
 		t.Close()
 		return "", NewConnError(err, true)
@@ -159,5 +166,6 @@ func (t *XMPPTransport) LogTraffic(logFile io.Writer) {
 }
 
 func (t *XMPPTransport) ReceivedStreamClose() {
+	log.Print("T: Received stream close")
 	t.closeChan <- stanza.StreamClosePacket{}
 }

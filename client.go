@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"errors"
+	"log"
 	"io"
 	"net"
 	"sync"
@@ -94,6 +95,7 @@ type EventManager struct {
 // updateState changes the CurrentState in the event manager. The state read is threadsafe but there is no guarantee
 // regarding the triggered callback function.
 func (em *EventManager) updateState(state ConnState) {
+	log.Printf("C: State changed to %d", state)
 	em.CurrentState.setState(state)
 	if em.Handler != nil {
 		em.Handler(Event{State: em.CurrentState})
@@ -103,6 +105,7 @@ func (em *EventManager) updateState(state ConnState) {
 // disconnected changes the CurrentState in the event manager to "disconnected". The state read is threadsafe but there is no guarantee
 // regarding the triggered callback function.
 func (em *EventManager) disconnected(state SMState) {
+	log.Print("C: Disconnected state")
 	em.CurrentState.setState(StateDisconnected)
 	if em.Handler != nil {
 		em.Handler(Event{State: em.CurrentState, SMState: state})
@@ -112,6 +115,7 @@ func (em *EventManager) disconnected(state SMState) {
 // streamError changes the CurrentState in the event manager to "streamError". The state read is threadsafe but there is no guarantee
 // regarding the triggered callback function.
 func (em *EventManager) streamError(error, desc string) {
+	log.Print("C: Stream error")
 	em.CurrentState.setState(StateStreamError)
 	if em.Handler != nil {
 		em.Handler(Event{State: em.CurrentState, StreamError: error, Description: desc})
@@ -245,6 +249,7 @@ func (c *Client) connect() error {
 	// This is the TCP connection
 	streamId, err := c.transport.Connect()
 	if err != nil {
+		log.Print("C: Connection failure")
 		return err
 	}
 
@@ -263,6 +268,7 @@ func (c *Client) connect() error {
 				switch val.(type) {
 				case stanza.StreamClosePacket:
 					// TCP messages should arrive in order, so we can expect to get nothing more after this occurs
+					log.Print("C: Stream close tag")
 					c.transport.ReceivedStreamClose()
 					return
 				}
@@ -386,6 +392,8 @@ func (c *Client) recv(keepaliveQuit chan<- struct{}) {
 	defer close(keepaliveQuit)
 
 	for {
+		log.Print("C: Receiving...")
+
 		val, err := stanza.NextPacket(c.transport.GetDecoder())
 		if err != nil {
 			c.ErrorHandler(err)
@@ -414,8 +422,10 @@ func (c *Client) recv(keepaliveQuit chan<- struct{}) {
 			}
 		case stanza.StreamClosePacket:
 			// TCP messages should arrive in order, so we can expect to get nothing more after this occurs
+			log.Print("C: Stream closed 1")
 			c.transport.ReceivedStreamClose()
 			c.Disconnect()
+			log.Print("C: Stream closed 2")
 			continue
 		default:
 			c.Session.SMState.Inbound++
