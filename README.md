@@ -1,43 +1,25 @@
-# Fluux XMPP
+# XMPP library for Go
 
-[![GoDoc](https://godoc.org/gosrc.io/xmpp?status.svg)](https://godoc.org/gosrc.io/xmpp) [![GoReportCard](https://goreportcard.com/badge/gosrc.io/xmpp)](https://goreportcard.com/report/fluux.io/xmpp) [![Coverage Status](https://coveralls.io/repos/github/FluuxIO/go-xmpp/badge.svg?branch=master)](https://coveralls.io/github/FluuxIO/go-xmpp?branch=master)
+> **This is an unofficial fork of [FluuxIO/go-xmpp](https://github.com/FluuxIO/go-xmpp).**
+> This fork is maintained for my own projects only, because of some fixes I
+> needed that were not merged upstream, and because I wanted to make some
+> design changes to better suit my needs.
+>
+> If you use this fork and find it useful, contributions are welcome.
+> Issues opened without a contribution are unlikely to get fixed.
 
-Fluux XMPP is a Go XMPP library, focusing on simplicity, simple automation, and IoT.
+**Known differences from upstream**
 
-The goal is to make simple to write simple XMPP clients and components:
+- Improved reconnect logic - this library will try hard to keep connected to
+  the server (while using sensible retry practices, such as backoff). In some
+  cases the upstream library will not attempt to reconnect.
+- This library does not send initial presence, the application must send it if
+  desired. At the time of writing, the upstream library sends a default
+  initial presence unconditionally.
 
-- For automation (like for example monitoring of an XMPP service),
-- For building connected "things" by plugging them on an XMPP server,
-- For writing simple chatbot to control a service or a thing,
-- For writing XMPP servers components.
+Parts of the original README remain below.
 
-The library is designed to have minimal dependencies. Currently it requires at least Go 1.13.
-
-## Configuration and connection
-
-### Allowing Insecure TLS connection during development
-
-It is not recommended to disable the check for domain name and certificate chain. Doing so would open your client
-to man-in-the-middle attacks.
-
-However, in development, XMPP servers often use self-signed certificates. In that situation, it is better to add the
-root CA that signed the certificate to your trusted list of root CA. It avoids changing the code and limit the risk
-of shipping an insecure client to production.
-
-That said, if you really want to allow your client to trust any TLS certificate, you can customize Go standard 
-`tls.Config` and set it in Config struct.
-
-Here is an example code to configure a client to allow connecting to a server with self-signed certificate. Note the 
-`InsecureSkipVerify` option. When using this `tls.Config` option, all the checks on the certificate are skipped.
-
-```go
-config := xmpp.Config{
-	Address:      "localhost:5222",
-	Jid:          "test@localhost",
-	Credential:   xmpp.Password("Test"),
-	TLSConfig:    tls.Config{InsecureSkipVerify: true},
-}
-```
+---
 
 ## Supported specifications
 
