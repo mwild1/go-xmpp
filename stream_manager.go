@@ -155,12 +155,12 @@ func (sm *StreamManager) resume() error {
 		// TODO: Make it possible to define logger to log disconnect and reconnection attempts
 		sm.Metrics = initMetrics()
 		if err = sm.client.Resume(); err != nil {
+			log.Print("SM: Resume failed")
 			var actualErr ConnError
 			if xerrors.As(err, &actualErr) {
-				if actualErr.Permanent {
-					return xerrors.Errorf("unrecoverable connect error %#v", actualErr)
-				}
+				log.Print("SM: Connect error", actualErr)
 			}
+			log.Print("SM: Will retry...")
 			backoff.wait()
 		} else { // We are connected, we can leave the retry loop
 			break
