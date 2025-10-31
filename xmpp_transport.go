@@ -120,6 +120,12 @@ func (t *XMPPTransport) StartTLS() error {
 }
 
 func (t *XMPPTransport) Ping() error {
+	if t == nil {
+		return errors.New("Ping called on nil XMPPTransport")
+	}
+	if t.conn == nil {
+		return errors.New("Ping: connection is nil")
+	}
 	n, err := t.conn.Write([]byte("\n"))
 	if err != nil {
 		return err
