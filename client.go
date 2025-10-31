@@ -223,9 +223,6 @@ func (c *Client) Connect() error {
 	if err != nil {
 		return err
 	}
-	// TODO: Do we always want to send initial presence automatically ?
-	// Do we need an option to avoid that or do we rely on client to send the presence itself ?
-	err = c.sendWithWriter(c.transport, []byte(InitialPresence))
 	// Execute the post first connection hook. Typically this holds "ask for roster" and this type of actions.
 	if c.PostConnectHook != nil {
 		err = c.PostConnectHook()
