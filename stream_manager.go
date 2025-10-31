@@ -46,6 +46,7 @@ type Sender interface {
 type StreamManager struct {
 	client      StreamClient
 	PostConnect PostConnect
+	reconnecting bool
 
 	// Store low level metrics
 	Metrics *Metrics
@@ -77,6 +78,7 @@ func (sm *StreamManager) Run() error {
 	handler := func(e Event) error {
 		switch e.State.state {
 		case StateSessionEstablished:
+			sm.reconnecting = false
 			sm.Metrics.setLoginTime()
 		case StateDisconnected:
 			// Reconnect on disconnection
@@ -128,12 +130,18 @@ func (sm *StreamManager) connect() error {
 			}
 		}
 	}
-	return errors.New("client is not disconnected")
+	return nil
 }
 
 // resume manages the reconnection loop and apply the define backoff to avoid overloading the server.
 func (sm *StreamManager) resume() error {
 	var backoff backoff // TODO: Group backoff calculation features with connection manager?
+
+	if sm.reconnecting == true {
+		return nil
+	}
+
+	sm.reconnecting = true;
 
 	for {
 		var err error
@@ -151,6 +159,8 @@ func (sm *StreamManager) resume() error {
 			break
 		}
 	}
+
+	sm.reconnecting = false
 
 	if sm.PostConnect != nil {
 		sm.PostConnect(sm.client)
